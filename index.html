@@ -1,0 +1,1459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title></title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+    <style>
+        /* ─── reset & base ─── */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            background: #fcf4f5;
+            color: #2d1b1b;
+        }
+
+        /* ─── custom properties ─── */
+        :root {
+            --rose: #ff6b81;
+            --rose-light: #ff9a9e;
+            --rose-pale: #fad0c4;
+            --shadow-card: 0 12px 40px rgba(45, 27, 27, 0.08);
+            --radius: 28px;
+        }
+
+        /* ─── scrollbar ─── */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #fcf4f5;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--rose-light);
+            border-radius: 12px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--rose);
+        }
+
+        /* ─── PASSWORD OVERLAY ─── */
+        .password-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 9999;
+            background: linear-gradient(145deg, #ff9a9e 0%, #fecfef 40%, #fad0c4 100%);
+            background-size: 200% 200%;
+            animation: gradientShift 12s ease-in-out infinite alternate;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            transition: opacity 0.8s ease, visibility 0.8s ease;
+        }
+
+        .password-overlay.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .password-overlay::before,
+        .password-overlay::after {
+            content: '';
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.3;
+            pointer-events: none;
+        }
+        .password-overlay::before {
+            width: 500px;
+            height: 500px;
+            top: -120px;
+            right: -120px;
+            background: #ff6b81;
+        }
+        .password-overlay::after {
+            width: 400px;
+            height: 400px;
+            bottom: -100px;
+            left: -100px;
+            background: #ffb3c6;
+        }
+
+        .password-box {
+            position: relative;
+            z-index: 2;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            border-radius: 32px;
+            padding: 50px 40px 40px;
+            max-width: 420px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.1);
+            animation: fadeIn 1.2s forwards;
+        }
+
+        .password-box .lock-icon {
+            font-size: 56px;
+            display: block;
+            margin-bottom: 12px;
+        }
+
+        .password-box h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 28px;
+            color: #fff;
+            margin-bottom: 8px;
+            text-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .password-box p {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 15px;
+            font-weight: 300;
+            margin-bottom: 28px;
+            letter-spacing: 0.3px;
+        }
+
+        .password-box input {
+            width: 100%;
+            padding: 14px 20px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            color: #fff;
+            font-size: 18px;
+            font-family: 'Inter', sans-serif;
+            text-align: center;
+            outline: none;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .password-box input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+            font-weight: 300;
+        }
+
+        .password-box input:focus {
+            border-color: rgba(255, 255, 255, 0.6);
+            box-shadow: 0 0 30px rgba(255, 107, 129, 0.15);
+        }
+
+        .password-box input.error {
+            border-color: #ff4757;
+            animation: shake 0.4s ease;
+        }
+
+        @keyframes shake {
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+            25% {
+                transform: translateX(-10px);
+            }
+            75% {
+                transform: translateX(10px);
+            }
+        }
+
+        .password-box .error-msg {
+            color: #ff4757;
+            font-size: 13px;
+            font-weight: 500;
+            margin-top: 12px;
+            min-height: 20px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .password-box .error-msg.visible {
+            opacity: 1;
+        }
+
+        .password-box button {
+            margin-top: 20px;
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            color: #fff;
+            font-size: 17px;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: background 0.3s ease, transform 0.2s ease;
+            letter-spacing: 0.5px;
+        }
+
+        .password-box button:hover {
+            background: rgba(255, 255, 255, 0.35);
+            transform: scale(1.01);
+        }
+
+        .password-box button:active {
+            transform: scale(0.97);
+        }
+
+        .password-box .hearts-deco {
+            font-size: 18px;
+            letter-spacing: 12px;
+            color: rgba(255, 255, 255, 0.3);
+            margin-top: 20px;
+        }
+
+        /* ─── MAIN CONTENT (initially hidden) ─── */
+        .main-content {
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.8s ease 0.4s, visibility 0.8s ease 0.4s;
+        }
+
+        .main-content.revealed {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* ─── HERO ─── */
+        .hero {
+            height: 100vh;
+            min-height: 700px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(145deg, #ff9a9e 0%, #fecfef 40%, #fad0c4 100%);
+            background-size: 200% 200%;
+            animation: gradientShift 12s ease-in-out infinite alternate;
+        }
+
+        @keyframes gradientShift {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        .hero::before,
+        .hero::after {
+            content: '';
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.3;
+            pointer-events: none;
+        }
+        .hero::before {
+            width: 500px;
+            height: 500px;
+            top: -120px;
+            right: -120px;
+            background: #ff6b81;
+        }
+        .hero::after {
+            width: 400px;
+            height: 400px;
+            bottom: -100px;
+            left: -100px;
+            background: #ffb3c6;
+        }
+
+        .hero-content {
+            text-align: center;
+            z-index: 5;
+            padding: 0 24px;
+            position: relative;
+        }
+
+        .hero-content .badge {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 8px 22px;
+            border-radius: 100px;
+            font-size: 14px;
+            font-weight: 500;
+            letter-spacing: 0.6px;
+            color: #fff;
+            text-transform: uppercase;
+            margin-bottom: 28px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            animation: fadeIn 1.8s forwards;
+        }
+
+        .hero h1 {
+            font-family: 'Playfair Display', serif;
+            font-weight: 700;
+            font-size: clamp(52px, 10vw, 110px);
+            color: #fff;
+            text-shadow: 0 8px 40px rgba(255, 107, 129, 0.25);
+            letter-spacing: -0.02em;
+            line-height: 1.1;
+            animation: fadeIn 2.2s forwards;
+        }
+
+        .hero h1 .highlight {
+            background: linear-gradient(135deg, #fff 60%, #ffe0e0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero p {
+            margin-top: 20px;
+            font-size: clamp(18px, 2.2vw, 28px);
+            font-weight: 300;
+            color: rgba(255, 255, 255, 0.92);
+            letter-spacing: 0.4px;
+            animation: fadeIn 2.2s 0.4s forwards;
+            opacity: 0;
+        }
+
+        .scroll-indicator {
+            margin-top: 52px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            animation: fadeIn 2.2s 0.9s forwards, floatY 2.8s ease-in-out infinite;
+            opacity: 0;
+            cursor: default;
+        }
+
+        .scroll-indicator span {
+            font-size: 14px;
+            font-weight: 400;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.75);
+        }
+
+        .scroll-indicator .mouse {
+            width: 26px;
+            height: 40px;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            border-radius: 14px;
+            position: relative;
+        }
+
+        .scroll-indicator .mouse::after {
+            content: '';
+            position: absolute;
+            top: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 4px;
+            height: 10px;
+            background: #fff;
+            border-radius: 4px;
+            animation: scrollWheel 2s ease-in-out infinite;
+        }
+
+        @keyframes scrollWheel {
+            0%,
+            100% {
+                transform: translateX(-50%) translateY(0);
+                opacity: 1;
+            }
+            50% {
+                transform: translateX(-50%) translateY(14px);
+                opacity: 0.2;
+            }
+        }
+
+        @keyframes floatY {
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(8px);
+            }
+        }
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+            }
+        }
+
+        /* ─── floating hearts (fall from top) ─── */
+        .heart-particle {
+            position: absolute;
+            top: -20px;
+            pointer-events: none;
+            z-index: 2;
+            animation: fallDown linear forwards;
+            filter: drop-shadow(0 4px 12px rgba(255, 107, 129, 0.25));
+            user-select: none;
+        }
+
+        @keyframes fallDown {
+            0% {
+                transform: translateY(0) rotate(0deg) scale(0.6);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(120vh) rotate(720deg) scale(1.1);
+                opacity: 0;
+            }
+        }
+
+        /* ─── TIMELINE SECTION ─── */
+        .timeline-section {
+            height: 350vh;
+            position: relative;
+            background: #fcf4f5;
+        }
+
+        .timeline-section::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: linear-gradient(to bottom, rgba(252, 244, 245, 0), #fcf4f5);
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .timeline-sticky {
+            height: 100vh;
+            min-height: 600px;
+            position: sticky;
+            top: 0;
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+            background: #fcf4f5;
+            z-index: 1;
+        }
+
+        .progress-track {
+            position: absolute;
+            bottom: 48px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: min(70%, 600px);
+            height: 4px;
+            background: rgba(255, 107, 129, 0.15);
+            border-radius: 6px;
+            z-index: 10;
+            overflow: hidden;
+        }
+
+        .progress-track .bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--rose-light), var(--rose));
+            border-radius: 6px;
+            transition: width 0.1s linear;
+        }
+
+        .progress-label {
+            position: absolute;
+            bottom: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--rose);
+            letter-spacing: 0.4px;
+            opacity: 0.6;
+            z-index: 10;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(4px);
+            padding: 4px 16px;
+            border-radius: 40px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .timeline-track {
+            display: flex;
+            gap: 80px;
+            padding: 0 60px 80px 60px;
+            will-change: transform;
+            align-items: center;
+        }
+
+        /* ─── event cards (transparent, no shadow, no top line) ─── */
+        .event {
+            width: 380px;
+            min-height: 320px;
+            flex-shrink: 0;
+            background: transparent !important;
+            backdrop-filter: none;
+            border-radius: var(--radius);
+            padding: 40px 36px 36px;
+            box-shadow: none !important;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1),
+                border-color 0.4s ease,
+                opacity 0.6s ease;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            opacity: 0.5;
+            transform: scale(0.92);
+            will-change: transform, opacity;
+        }
+
+        .event.visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* remove the top line */
+        .event::before {
+            display: none;
+        }
+
+        .event:hover {
+            transform: translateY(-8px) scale(1.02) !important;
+            border-color: rgba(255, 107, 129, 0.2);
+        }
+
+        .event .date-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-family: 'Playfair Display', serif;
+            font-weight: 600;
+            font-size: 32px;
+            color: var(--rose);
+            margin-bottom: 14px;
+            letter-spacing: -0.01em;
+        }
+
+        .event .date-badge .day {
+            font-size: 14px;
+            font-weight: 500;
+            font-family: 'Inter', sans-serif;
+            color: rgba(45, 27, 27, 0.4);
+            letter-spacing: 0.4px;
+            margin-left: 2px;
+        }
+
+        .event h2 {
+            font-family: 'Playfair Display', serif;
+            font-weight: 600;
+            font-size: 26px;
+            color: #2d1b1b;
+            margin-bottom: 12px;
+            line-height: 1.2;
+        }
+
+        .event p {
+            font-size: 18px;
+            line-height: 1.6;
+            color: rgba(45, 27, 27, 0.75);
+            font-weight: 400;
+            flex: 1;
+        }
+
+        .event .memory-icon {
+            font-size: 42px;
+            margin-bottom: 12px;
+            display: block;
+            line-height: 1;
+        }
+
+        .footer-note {
+            position: absolute;
+            bottom: 12px;
+            right: 32px;
+            font-size: 13px;
+            color: rgba(45, 27, 27, 0.2);
+            font-weight: 400;
+            letter-spacing: 0.3px;
+            z-index: 10;
+            pointer-events: none;
+            background: rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(4px);
+            padding: 4px 16px;
+            border-radius: 40px;
+        }
+
+        /* ─── LOVE SECTION ─── */
+        .love-section {
+            min-height: 100vh;
+            padding: 80px 20px 100px;
+            background: radial-gradient(circle at 10% 20%, rgba(255, 154, 158, 0.08) 0%, rgba(250, 208, 196, 0.08) 90%),
+                #fcf4f5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .love-section .section-heading {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(40px, 6vw, 70px);
+            background: linear-gradient(135deg, #FEB5CD 0%, #FDCFED 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 60px;
+            text-align: center;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            position: relative;
+        }
+
+        .stack-container {
+            position: relative;
+            width: 340px;
+            height: 380px;
+            max-width: 90vw;
+            max-height: 70vh;
+            perspective: 800px;
+        }
+
+        .stack-card {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 24px;
+            padding: 30px 28px;
+            background: rgba(255, 255, 255, 0) !important;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-size: clamp(20px, 3vw, 32px);
+            font-family: 'Playfair Display', serif;
+            font-weight: 600;
+            color: #2d1b1b;
+            cursor: grab;
+            user-select: none;
+            will-change: transform, opacity;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            transform-style: preserve-3d;
+            transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1),
+                opacity 0.5s ease,
+                border-color 0.4s ease,
+                box-shadow 0.4s ease;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.03);
+            opacity: 0;
+            transform: translateY(40px) scale(0.9);
+        }
+
+        .stack-card.entered {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        .stack-card:hover {
+            border-color: rgba(255, 107, 129, 0.3);
+        }
+
+        .stack-card.dragging {
+            cursor: grabbing;
+            transition: none !important;
+            z-index: 999 !important;
+            border-color: var(--rose) !important;
+            box-shadow: 0 20px 60px rgba(255, 107, 129, 0.15) !important;
+            transform-origin: center center;
+        }
+
+        .stack-card.idle-pulse {
+            animation: softPulse 3s ease-in-out infinite;
+        }
+
+        @keyframes softPulse {
+            0%,
+            100% {
+                border-color: rgba(255, 255, 255, 0.25);
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.03);
+            }
+            50% {
+                border-color: rgba(255, 107, 129, 0.15);
+                box-shadow: 0 8px 40px rgba(255, 107, 129, 0.05);
+            }
+        }
+
+        .stack-card .card-text {
+            color: #FEB5CD;
+            line-height: 1.4;
+            text-shadow: 0 2px 8px rgba(255, 255, 255, 0.2);
+        }
+
+        /* ─── STATS SECTION ─── */
+        .stats-section {
+            min-height: 100vh;
+            padding: 80px 20px 100px;
+            /* Updated background to match Hero */
+            background: linear-gradient(145deg, #ff9a9e 0%, #fecfef 40%, #fad0c4 100%);
+            background-size: 200% 200%;
+            animation: gradientShift 12s ease-in-out infinite alternate;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Decorative blur circles matching Hero */
+        .stats-section::before,
+        .stats-section::after {
+            content: '';
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.3;
+            pointer-events: none;
+        }
+        .stats-section::before {
+            width: 500px;
+            height: 500px;
+            top: -120px;
+            right: -120px;
+            background: #ff6b81;
+        }
+        .stats-section::after {
+            width: 400px;
+            height: 400px;
+            bottom: -100px;
+            left: -100px;
+            background: #ffb3c6;
+        }
+
+        .stats-section .section-heading {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(40px, 6vw, 70px);
+            color: #fff;
+            text-shadow: 0 4px 30px rgba(0, 0, 0, 0.15);
+            margin-bottom: 60px;
+            text-align: center;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            position: relative;
+            z-index: 2;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 30px;
+            max-width: 800px;
+            width: 100%;
+            padding: 0 20px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            border-radius: 20px;
+            padding: 24px 16px;
+            text-align: center;
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+
+        .stat-value {
+            font-size: clamp(32px, 5vw, 56px);
+            font-weight: 700;
+            font-family: 'Playfair Display', serif;
+            color: #fff;
+            text-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            line-height: 1.2;
+            letter-spacing: 0.02em;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: rgba(255, 255, 255, 0.85);
+            margin-top: 8px;
+        }
+
+        .stat-card.infinite .stat-value {
+            font-size: clamp(40px, 6vw, 70px);
+        }
+
+        .stat-card.arguments .stat-value {
+            color: #fff;
+        }
+
+        /* responsive for stats */
+        @media (max-width: 600px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 16px;
+            }
+            .stat-card {
+                padding: 16px 12px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .stack-container {
+                width: 280px;
+                height: 320px;
+            }
+            .stack-card {
+                padding: 20px 16px;
+                font-size: 20px;
+            }
+            .password-box {
+                padding: 30px 20px 24px;
+            }
+            .password-box h2 {
+                font-size: 22px;
+            }
+        }
+
+        /* responsive for timeline */
+        @media (max-width: 768px) {
+            .timeline-track {
+                gap: 40px;
+                padding: 0 24px 80px 24px;
+            }
+            .event {
+                width: 290px;
+                min-height: 260px;
+                padding: 28px 24px 28px;
+            }
+            .event .date-badge {
+                font-size: 26px;
+            }
+            .event h2 {
+                font-size: 22px;
+            }
+            .event p {
+                font-size: 16px;
+            }
+            .event .memory-icon {
+                font-size: 32px;
+            }
+            .progress-track {
+                width: 80%;
+                bottom: 28px;
+            }
+            .progress-label {
+                bottom: 40px;
+                font-size: 11px;
+                padding: 2px 12px;
+            }
+            .hero h1 {
+                font-size: clamp(40px, 12vw, 60px);
+            }
+            .hero-content .badge {
+                font-size: 11px;
+                padding: 6px 16px;
+                margin-bottom: 20px;
+            }
+            .scroll-indicator .mouse {
+                width: 22px;
+                height: 34px;
+            }
+            .footer-note {
+                display: none;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .event {
+                width: 250px;
+                min-height: 220px;
+                padding: 22px 18px 22px;
+            }
+            .timeline-track {
+                gap: 24px;
+                padding: 0 16px 80px 16px;
+            }
+            .event .date-badge {
+                font-size: 22px;
+            }
+            .event h2 {
+                font-size: 19px;
+            }
+            .event p {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ═══ PASSWORD OVERLAY ═══ -->
+    <div class="password-overlay" id="passwordOverlay">
+        <div class="password-box">
+            <h2>Password</h2>
+            <input type="password" id="passwordInput" placeholder="Enter password..." autofocus />
+            <div class="error-msg" id="errorMsg">Wrong password, try again.</div>
+            <button id="unlockBtn">Unlock</button>
+        </div>
+    </div>
+
+    <!-- ═══ MAIN CONTENT (hidden until password) ═══ -->
+    <div class="main-content" id="mainContent">
+
+        <!-- ═══ HERO ═══ -->
+        <section class="hero" id="hero">
+            <div class="hero-content">
+                <div class="badge">✦ i love you</div>
+                <h1>Happy Valentine's<span class="highlight"> Day</span></h1>
+                <p>&nbsp;♡</p>
+                <div class="scroll-indicator">
+                    <span>Scroll to relive</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══ TIMELINE ═══ -->
+        <section class="timeline-section" id="timelineSection">
+            <div class="timeline-sticky">
+
+                <div class="progress-track">
+                    <div class="bar" id="progressFill"></div>
+                </div>
+                <div class="progress-label" id="progressLabel">0%</div>
+
+                <div class="timeline-track" id="timelineTrack">
+
+                    <div class="event">
+                        <div class="date-badge">
+                            18 May
+                        </div>
+                        <h2>the beginning</h2>
+                        <p>We met when Shomron and I walked you home</p>
+                    </div>
+
+                    <div class="event">
+                        <div class="date-badge">
+                            19 June
+                        </div>
+                        <h2>Endless talks</h2>
+                        <p>We started talking all the time</p>
+                    </div>
+
+                    <div class="event">
+                        <div class="date-badge">
+                            8 July
+                        </div>
+                        <h2>Together at last</h2>
+                        <p>We became a couple ❤️ The best decision I ever made.</p>
+                    </div>
+
+                    <div class="event">
+                        <div class="date-badge">
+                            &nbsp;Today
+                        </div>
+                        <h2>Our forever</h2>
+                        <p>Every moment with you feels like the first page of something beautiful.</p>
+                    </div>
+
+                </div>
+
+                <div class="footer-note"></div>
+            </div>
+        </section>
+
+        <!-- ═══ LOVE SECTION (stack) ═══ -->
+        <section class="love-section" id="loveSection">
+            <h2 class="section-heading">
+                Things I Love About You
+            </h2>
+
+            <div class="stack-container" id="stackContainer">
+                <!-- cards injected by JS -->
+            </div>
+        </section>
+
+        <!-- ═══ STATS SECTION ═══ -->
+        <section class="stats-section" id="statsSection">
+            <h2 class="section-heading">Stats</h2>
+
+            <div class="stats-grid">
+                <!-- Days -->
+                <div class="stat-card">
+                    <div class="stat-value" id="days">0</div>
+                    <div class="stat-label">Days</div>
+                </div>
+                <!-- Hours -->
+                <div class="stat-card">
+                    <div class="stat-value" id="hours">0</div>
+                    <div class="stat-label">Hours</div>
+                </div>
+                <!-- Minutes -->
+                <div class="stat-card">
+                    <div class="stat-value" id="minutes">0</div>
+                    <div class="stat-label">Minutes</div>
+                </div>
+                <!-- Seconds -->
+                <div class="stat-card">
+                    <div class="stat-value" id="seconds">0</div>
+                    <div class="stat-label">Seconds</div>
+                </div>
+                <!-- Arguments won -->
+                <div class="stat-card arguments">
+                    <div class="stat-value">0</div>
+                    <div class="stat-label">Arguments amir won</div>
+                </div>
+                <!-- Reasons -->
+                <div class="stat-card infinite">
+                    <div class="stat-value">∞</div>
+                    <div class="stat-label">Reasons I love you</div>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <script>
+        // ============================================================
+        // 0. PASSWORD GATE
+        // ============================================================
+        (function initPassword() {
+            const overlay = document.getElementById('passwordOverlay');
+            const mainContent = document.getElementById('mainContent');
+            const input = document.getElementById('passwordInput');
+            const btn = document.getElementById('unlockBtn');
+            const errorMsg = document.getElementById('errorMsg');
+            const CORRECT_PASSWORD = 'arbel2011';
+
+            function unlock() {
+                const entered = input.value.trim();
+                if (entered === CORRECT_PASSWORD) {
+                    // Hide overlay
+                    overlay.classList.add('hidden');
+                    // Reveal main content
+                    mainContent.classList.add('revealed');
+                    // Focus on something else to remove keyboard on mobile
+                    document.activeElement && document.activeElement.blur();
+                    // Initialize everything after reveal
+                    setTimeout(() => {
+                        // Re-init timeline, stack, stats (they auto-run on load)
+                        // But since they already ran, we just need to make sure they work
+                    }, 400);
+                } else {
+                    // Show error
+                    errorMsg.classList.add('visible');
+                    input.classList.add('error');
+                    input.value = '';
+                    input.focus();
+                    setTimeout(() => {
+                        input.classList.remove('error');
+                    }, 500);
+                }
+            }
+
+            // Enter key
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    unlock();
+                }
+            });
+
+            // Button click
+            btn.addEventListener('click', unlock);
+
+            // Auto-focus on load
+            setTimeout(() => input.focus(), 300);
+
+            // Clear error on typing
+            input.addEventListener('input', () => {
+                errorMsg.classList.remove('visible');
+                input.classList.remove('error');
+            });
+        })();
+
+        // ============================================================
+        // 1. FLOATING HEARTS (fall from top)
+        // ============================================================
+        (function createHearts() {
+            const hero = document.querySelector('.hero');
+
+            function spawnHeart() {
+                const el = document.createElement('div');
+                el.className = 'heart-particle';
+                el.textContent = ['❤️', '💖', '💗', '✨', '🌸', '🌹'][Math.floor(Math.random() * 6)];
+                el.style.left = Math.random() * 100 + '%';
+                el.style.fontSize = 18 + Math.random() * 32 + 'px';
+                el.style.animationDuration = 6 + Math.random() * 8 + 's';
+                const hue = 340 + Math.random() * 20;
+                el.style.color = `hsl(${hue}, 80%, 70%)`;
+                hero.appendChild(el);
+                setTimeout(() => el.remove(), 14000);
+            }
+
+            for (let i = 0; i < 14; i++) {
+                setTimeout(spawnHeart, i * 180);
+            }
+            setInterval(spawnHeart, 380);
+        })();
+
+        // ============================================================
+        // 2. HORIZONTAL TIMELINE SCROLL
+        // ============================================================
+        (function initTimeline() {
+            const section = document.getElementById('timelineSection');
+            const track = document.getElementById('timelineTrack');
+            const progressFill = document.getElementById('progressFill');
+            const progressLabel = document.getElementById('progressLabel');
+            const events = document.querySelectorAll('.event');
+
+            events.forEach((e, i) => {
+                setTimeout(() => e.classList.add('visible'), 200 + i * 150);
+            });
+
+            function updateTimeline() {
+                const rect = section.getBoundingClientRect();
+                const totalScroll = section.offsetHeight - window.innerHeight;
+                let progress = -rect.top / totalScroll;
+                progress = Math.min(Math.max(progress, 0), 1);
+
+                const maxTranslate = track.scrollWidth - window.innerWidth;
+                track.style.transform = `translateX(-${maxTranslate * progress}px)`;
+
+                const percent = Math.round(progress * 100);
+                progressFill.style.width = percent + '%';
+                progressLabel.textContent = percent + '%';
+
+                const viewCenter = window.innerWidth / 2;
+                events.forEach((el) => {
+                    const elRect = el.getBoundingClientRect();
+                    const elCenter = elRect.left + elRect.width / 2;
+                    const dist = Math.abs(elCenter - viewCenter) / (window.innerWidth * 0.6);
+                    const clamped = Math.min(dist, 1);
+                    const opacity = 0.5 + (1 - clamped) * 0.5;
+                    const scale = 0.90 + (1 - clamped) * 0.10;
+                    el.style.opacity = opacity;
+                    el.style.transform = `scale(${scale})`;
+                });
+            }
+
+            let ticking = false;
+            window.addEventListener('scroll', () => {
+                if (!ticking) {
+                    window.requestAnimationFrame(() => {
+                        updateTimeline();
+                        ticking = false;
+                    });
+                    ticking = true;
+                }
+            });
+
+            window.addEventListener('resize', updateTimeline);
+            setTimeout(updateTimeline, 150);
+        })();
+
+        // ============================================================
+        // 3. STACK – ANIMATED DRAG & REORDER
+        // ============================================================
+        (function initStack() {
+            const items = [
+                'Your smile',
+                'How you always make my day better',
+                'Your eyes',
+                'Your laugh',
+                'Just being with you'
+            ];
+
+            const container = document.getElementById('stackContainer');
+            let cards = [];
+
+            // create cards
+            items.forEach((text) => {
+                const card = document.createElement('div');
+                card.className = 'stack-card';
+                card.innerHTML = `<span class="card-text">${text}</span>`;
+                container.appendChild(card);
+                cards.push(card);
+            });
+
+            // store base transform per card
+            const baseTransforms = new Map();
+
+            // ----- stack layout -----
+            function updateStack(animate = true) {
+                const total = cards.length;
+                cards.forEach((card, i) => {
+                    const depth = i / (total - 1);
+                    const rotate = (depth - 0.5) * 8;
+                    const scale = 0.92 + depth * 0.08;
+                    const translateY = -depth * 12;
+                    const transform = `rotate(${rotate}deg) scale(${scale}) translateY(${translateY}px)`;
+
+                    if (!animate) {
+                        card.style.transition = 'none';
+                    } else {
+                        // Add a staggered delay for a wave effect
+                        const delay = i * 0.03;
+                        card.style.transitionDelay = `${delay}s`;
+                        card.style.transition = 'transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.5s ease';
+                    }
+
+                    card.style.zIndex = i;
+                    card.style.transform = transform;
+                    card.style.opacity = 0.6 + depth * 0.4;
+
+                    // store base transform for dragging
+                    baseTransforms.set(card, transform);
+
+                    // toggle idle animation on the top card
+                    if (i === total - 1) {
+                        card.classList.add('idle-pulse');
+                    } else {
+                        card.classList.remove('idle-pulse');
+                    }
+                });
+
+                // Reset transition after a frame if animate is false
+                if (!animate) {
+                    requestAnimationFrame(() => {
+                        cards.forEach((card) => {
+                            card.style.transition = '';
+                            card.style.transitionDelay = '';
+                        });
+                    });
+                }
+            }
+
+            // ----- send card to back (bottom of stack) -----
+            function sendToBack(card) {
+                const index = cards.indexOf(card);
+                if (index === -1 || index === 0) return;
+                cards.splice(index, 1);
+                cards.unshift(card);
+                updateStack(true);
+            }
+
+            // ----- drag handling -----
+            const DRAG_THRESHOLD = 50; // px
+
+            function addDragListeners(card) {
+                let startX = 0,
+                    startY = 0;
+                let isDragging = false;
+                let moved = false;
+                let offsetX = 0,
+                    offsetY = 0;
+
+                function onStart(e) {
+                    const ev = e.touches ? e.touches[0] : e;
+                    startX = ev.clientX;
+                    startY = ev.clientY;
+                    isDragging = true;
+                    moved = false;
+                    offsetX = 0;
+                    offsetY = 0;
+
+                    // Disable transition for instant drag follow
+                    card.style.transition = 'none';
+                    card.classList.add('dragging');
+
+                    // Prevent text selection and default drag behavior
+                    e.preventDefault && e.preventDefault();
+                }
+
+                function onMove(e) {
+                    if (!isDragging) return;
+                    const ev = e.touches ? e.touches[0] : e;
+                    const dx = ev.clientX - startX;
+                    const dy = ev.clientY - startY;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist > 5) moved = true;
+                    offsetX = dx;
+                    offsetY = dy;
+
+                    // Apply base transform + drag offset
+                    const base = baseTransforms.get(card) || '';
+                    // Add a subtle rotation based on drag direction
+                    const rot = (dx / window.innerWidth) * 15;
+                    card.style.transform = `${base} translate(${dx}px, ${dy}px) rotate(${rot}deg)`;
+                    card.style.boxShadow = `0 30px 80px rgba(255, 107, 129, 0.2), 0 10px 30px rgba(0,0,0,0.05)`;
+
+                    e.preventDefault && e.preventDefault();
+                }
+
+                function onEnd(e) {
+                    if (!isDragging) return;
+                    card.classList.remove('dragging');
+                    isDragging = false;
+
+                    // Determine if we should send to back
+                    if (moved) {
+                        const ev = e.changedTouches ? e.changedTouches[0] : e;
+                        const dx = ev.clientX - startX;
+                        const dy = ev.clientY - startY;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        if (dist > DRAG_THRESHOLD) {
+                            // Send to back (handled by updateStack)
+                            card.style.transition = '';
+                            card.style.boxShadow = '';
+                            sendToBack(card);
+                        } else {
+                            // Snap back with bounce
+                            card.style.transition =
+                                'transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.4s ease';
+                            card.style.transform = baseTransforms.get(card) || '';
+                            card.style.boxShadow = '';
+                            // Reset z-index after animation
+                            setTimeout(() => {
+                                if (!card.classList.contains('dragging')) {
+                                    card.style.zIndex = '';
+                                }
+                            }, 400);
+                        }
+                    } else {
+                        // No movement, just reset
+                        card.style.transition = '';
+                        card.style.transform = baseTransforms.get(card) || '';
+                        card.style.boxShadow = '';
+                        card.style.zIndex = '';
+                    }
+                    moved = false;
+                }
+
+                // mouse events
+                card.addEventListener('mousedown', onStart);
+                document.addEventListener('mousemove', onMove);
+                document.addEventListener('mouseup', onEnd);
+
+                // touch events
+                card.addEventListener('touchstart', onStart, { passive: false });
+                document.addEventListener('touchmove', onMove, { passive: false });
+                document.addEventListener('touchend', onEnd);
+            }
+
+            // attach to all cards
+            cards.forEach((card) => {
+                addDragListeners(card);
+                // Entry animation
+                requestAnimationFrame(() => {
+                    card.classList.add('entered');
+                });
+            });
+
+            // initial render without animation
+            updateStack(false);
+
+            // Small delay to ensure entering class is applied, then remove transition delays
+            setTimeout(() => {
+                cards.forEach((card) => {
+                    card.style.transitionDelay = '';
+                });
+            }, 100);
+
+            // Optional: Auto-play to show off the animation
+            let autoPlayInterval;
+            function startAutoPlay() {
+                autoPlayInterval = setInterval(() => {
+                    if (cards.length > 1) {
+                        const topCard = cards[cards.length - 1];
+                        // Check if not being dragged
+                        if (!topCard.classList.contains('dragging')) {
+                            sendToBack(topCard);
+                        }
+                    }
+                }, 4000);
+            }
+
+            // Start autoplay after a few seconds
+            setTimeout(startAutoPlay, 2000);
+
+            // Pause autoplay on hover/touch
+            const section = document.getElementById('loveSection');
+            section.addEventListener('mouseenter', () => clearInterval(autoPlayInterval));
+            section.addEventListener('mouseleave', startAutoPlay);
+            // For touch devices
+            let touchTimeout;
+            section.addEventListener('touchstart', () => {
+                clearInterval(autoPlayInterval);
+                clearTimeout(touchTimeout);
+            });
+            section.addEventListener('touchend', () => {
+                touchTimeout = setTimeout(startAutoPlay, 3000);
+            });
+
+        })();
+
+        // ============================================================
+        // 4. STATS – LIVE COUNTER
+        // ============================================================
+        (function initStats() {
+            // SET YOUR COUPLE START DATE HERE (year, month-1, day)
+            const startDate = new Date(2026, 6, 8); // July 8, 2025
+
+            const daysEl = document.getElementById('days');
+            const hoursEl = document.getElementById('hours');
+            const minutesEl = document.getElementById('minutes');
+            const secondsEl = document.getElementById('seconds');
+
+            function updateTimer() {
+                const now = new Date();
+                const diff = now - startDate; // milliseconds
+
+                const seconds = Math.floor(diff / 1000);
+                const minutes = Math.floor(seconds / 60);
+                const hours = Math.floor(minutes / 60);
+                const days = Math.floor(hours / 24);
+
+                const remainingSeconds = seconds % 60;
+                const remainingMinutes = minutes % 60;
+                const remainingHours = hours % 24;
+
+                daysEl.textContent = days;
+                hoursEl.textContent = remainingHours;
+                minutesEl.textContent = remainingMinutes;
+                secondsEl.textContent = remainingSeconds;
+            }
+
+            updateTimer();
+            setInterval(updateTimer, 1000);
+        })();
+    </script>
+
+</body>
+</html>
